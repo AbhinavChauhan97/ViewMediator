@@ -8,6 +8,7 @@ import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.view.doOnAttach
 import com.github.abhinavchauhan97.viewmediator.ClicksMediator
 import com.github.abhinavchauhan97.viewmediator.ViewMediator
 
@@ -57,6 +58,18 @@ class MainActivity : AppCompatActivity() {
                 // this callback is called when already selected view is clicked again to make it unselected
                 // here you can make it look like it a unselected view should look like
             }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        val mediator = findViewById<ViewMediator>(R.id.mediator)
+        mediator.doOnAttach {
+            val textview =
+                layoutInflater.inflate(R.layout.textview, findViewById(R.id.container), false)
+            findViewById<LinearLayout>(R.id.container).addView(textview)
+            mediator.addView(textview)
+            mediator.addDefaultSelectedView(textview)
         }
     }
 }

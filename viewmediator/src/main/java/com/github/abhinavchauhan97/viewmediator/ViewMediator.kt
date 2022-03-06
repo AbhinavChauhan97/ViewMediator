@@ -19,6 +19,7 @@ class ViewMediator(context: Context, attributeSet: AttributeSet) : View(context,
     private val referencedViews = LinkedList<View>()
     private var clickedViews: Array<View?>
     var clicksMediator: ClicksMediator? = null
+    private var lastClickedView:View? = null
     var maxSelection = 1
     set(value) {
         field = value
@@ -52,10 +53,11 @@ class ViewMediator(context: Context, attributeSet: AttributeSet) : View(context,
 
     /**
      * adds a view for mediation
-     * @throws IllegalAccessException if ViewMediator is already attached to the window
      */
     fun addView(view: View) {
-        ensureNotAttachedToWindow()
+        if(isAttachedToWindow){
+            setListener(view)
+        }
         referencedViews.add(view)
     }
 
@@ -100,8 +102,10 @@ class ViewMediator(context: Context, attributeSet: AttributeSet) : View(context,
             val view = findViewInParent(id)
             storeInClickedViews(view)
         }
+        if(defaultSelectedViewsStringIds.isNotEmpty()){
         performActionOnClickedViews()
         performActionOnOtherViews()
+        }
     }
 
     private fun extractReferencedViews() {
@@ -123,20 +127,25 @@ class ViewMediator(context: Context, attributeSet: AttributeSet) : View(context,
     @SuppressLint("ClickableViewAccessibility")
     private fun setupViews() {
         referencedViews.forEach {
-            it.setOnTouchListener { _, event ->
-                if (event.action == MotionEvent.ACTION_UP) { // detect the click event
-                    if (fromClickedViews(it)) { // if this view was selected and now re clicked
-                        clicksMediator?.onSelectedViewReClick(it)
-                        removeFromClickedViews(it)
-                        return@setOnTouchListener false
-                    }
-                    storeInClickedViews(it)
-                    performActionOnClickedViews()
-                    performActionOnOtherViews()
+            setListener(it)
+        }
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private fun setListener(view:View){
+        view.setOnTouchListener { _, event ->
+            if (event.action == MotionEvent.ACTION_UP) { // detect the click event
+                if (fromClickedViews(view)) { // if this view was selected and now re clicked
+                    clicksMediator?.onSelectedViewReClick(view)
+                    removeFromClickedViews(view)
                     return@setOnTouchListener false
                 }
-                return@setOnTouchListener true
+                storeInClickedViews(view)
+                performActionOnClickedViews()
+                performActionOnOtherViews()
+                return@setOnTouchListener false
             }
+            return@setOnTouchListener true
         }
     }
 
